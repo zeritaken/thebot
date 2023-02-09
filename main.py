@@ -11,7 +11,11 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 
 def start(update, context):
-    update.message.reply_text("Bonjour! Je suis un bot Telegram. Tapez /menu pour afficher le menu.")
+    keyboard = [[InlineKeyboardButton("Latest Video", callback_data='latest_video')],
+                [InlineKeyboardButton("Subscribe", callback_data='subscribe')]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    update.message.reply_text("Bonjour! Je suis un bot Telegram. Voici le menu:", reply_markup=reply_markup)
+
 
 # Define the callback function for the buttons
 def button(update, context):
