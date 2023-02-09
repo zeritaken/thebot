@@ -1,36 +1,52 @@
 import logging
-import os
 import telegram
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
 
+# Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
 
 logger = logging.getLogger(__name__)
 
-def start(update, context):
-    update.message.reply_text("Bonjour! Je suis un bot d'airdrop. Envoyez /airdrop pour recevoir votre jeton gratuit.")
+# Define the callback function for the buttons
+def button(update, context):
+    query = update.callback_query
+    query.answer()
 
-def airdrop(update, context):
-    update.message.reply_text("Félicitations! Vous avez reçu votre jeton gratuit.")
+    # Check which button was clicked
+    if query.data == 'latest_video':
+        text = 'Here is the link to the latest video on nostavideos: https://www.youtube.com/watch?v=LATEST_VIDEO_ID'
+        context.bot.send_message(chat_id=query.message.chat_id, text=text)
+    elif query.data == 'subscribe':
+        text = 'Click here to subscribe to nostavideos on YouTube: https://www.youtube.com/channel/UC-CHANNEL_ID'
+        context.bot.send_message(chat_id=query.message.chat_id, text=text)
 
-def error(update, context):
-    logger.warning('Update "%s" caused error "%s"', update, context.error)
+# Define the menu command
+def menu(update, context):
+    keyboard = [[InlineKeyboardButton("Latest Video", callback_data='latest_video')],
+                [InlineKeyboardButton("Subscribe", callback_data='subscribe')]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    update.message.reply_text('Please choose:', reply_markup=reply_markup)
 
 def main():
-    token = os.environ.get("BOT_TOKEN")
+    # Get the bot token from the environment variable
+    TOKEN = 'BOT_TOKEN_HERE'
 
-    updater = Updater(token, use_context=True)
+    # Create the Updater and pass it the bot token
+    updater = Updater(TOKEN, use_context=True)
 
+    # Get the dispatcher to register handlers
     dp = updater.dispatcher
 
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("airdrop", airdrop))
+    # Add the menu command handler
+    dp.add_handler(CommandHandler('menu', menu))
 
-    dp.add_error_handler(error)
+    # Add the callback query handler
+    dp.add_handler(CallbackQueryHandler(button))
 
+    # Start the bot
     updater.start_polling()
-
     updater.idle()
 
 if __name__ == '__main__':
