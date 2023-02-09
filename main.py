@@ -1,4 +1,5 @@
 import logging
+import os
 import telegram
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
@@ -31,7 +32,7 @@ def menu(update, context):
 
 def main():
     # Get the bot token from the environment variable
-    TOKEN = 'BOT_TOKEN_HERE'
+    TOKEN = os.environ.get('BOT_TOKEN')
 
     # Create the Updater and pass it the bot token
     updater = Updater(TOKEN, use_context=True)
@@ -48,6 +49,7 @@ def main():
     # Start the bot
     updater.start_polling()
     updater.idle()
-
+    
 if __name__ == '__main__':
     main()
+
