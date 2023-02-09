@@ -20,10 +20,10 @@ def button(update, context):
 
     # Check which button was clicked
     if query.data == 'latest_video':
-        text = 'Here is the link to the latest video on nostavideos: https://www.youtube.com/watch?v=LATEST_VIDEO_ID'
+        text = 'Here is the link to the latest video on nostavideos: https://www.youtube.com/watch?v=4YRPf7FfvHA'
         context.bot.send_message(chat_id=query.message.chat_id, text=text)
     elif query.data == 'subscribe':
-        text = 'Click here to subscribe to nostavideos on YouTube: https://www.youtube.com/channel/UC-CHANNEL_ID'
+        text = 'Click here to subscribe to nostavideos on YouTube: https://www.youtube.com/channel/UC1q-08rtIIZ5lLxoxwZJs8Q'
         context.bot.send_message(chat_id=query.message.chat_id, text=text)
 
 # Define the menu command
