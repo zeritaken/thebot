@@ -14,7 +14,7 @@ def start(update, context):
 
 def airdrop(update, context):
     user_id = update.message.from_user.id
-    channel_username = "YOUR_CHANNEL_USERNAME"
+    channel_username = "nostavid"
     try:
         if context.bot.get_chat_member(channel_username, user_id).status in ["left", "kicked"]:
             update.message.reply_text("Vous n'êtes pas abonné à notre canal. Veuillez vous abonner pour recevoir votre récompense en jetons TRON.")
@@ -30,7 +30,7 @@ def error(update, context):
     logger.warning('Update "%s" caused error "%s"', update, context.error)
 
 def main():
-    token = os.environ.get('TELEGRAM_BOT_TOKEN')
+    token = os.environ.get('BOT_TOKEN')
 
     updater = Updater(token, use_context=True)
 
