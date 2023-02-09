@@ -20,7 +20,7 @@ logging.basicConfig(
 # Ajoutez un nom de fichier significatif pour la persistence
 persistence = PicklePersistence("conversationbot_persistence")
 
-token = os.environ["TOKEN"]
+token = os.environ["BOT_TOKEN"]
 
 updater = Updater(token=token, use_context=True, persistence=persistence)
 dispatcher = updater.dispatcher
