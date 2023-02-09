@@ -10,6 +10,9 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 
 logger = logging.getLogger(__name__)
 
+def start(update, context):
+    update.message.reply_text("Bonjour! Je suis un bot Telegram. Tapez /menu pour afficher le menu.")
+
 # Define the callback function for the buttons
 def button(update, context):
     query = update.callback_query
@@ -42,6 +45,9 @@ def main():
 
     # Add the menu command handler
     dp.add_handler(CommandHandler('menu', menu))
+    
+     # Add the start command handler
+    dp.add_handler(CommandHandler('start', start))
 
     # Add the callback query handler
     dp.add_handler(CallbackQueryHandler(button))
