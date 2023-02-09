@@ -1,49 +1,74 @@
-import logging
 import os
-import telegram
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
-from tronapi import Tron
+import logging
+from telegram import ParseMode
+from telegram.ext import (
+    Updater,
+    CommandHandler,
+    MessageHandler,
+    Filters,
+    ConversationHandler,
+    PicklePersistence,
+)
+from utils import handlers
 
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    level=logging.INFO)
+# Ajoutez un niveau de journalisation approprié pour Heroku
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+)
 
-logger = logging.getLogger(__name__)
+# Ajoutez un nom de fichier significatif pour la persistence
+persistence = PicklePersistence("conversationbot_persistence")
 
-def start(update, context):
-    update.message.reply_text("Bonjour! Je suis un bot d'airdrop de TRON. Abonnez-vous à notre canal pour recevoir votre récompense en jetons TRON.")
+token = os.environ["TOKEN"]
 
-def airdrop(update, context):
-    user_id = update.message.from_user.id
-    channel_username = "nostavid"
-    try:
-        if context.bot.get_chat_member(channel_username, user_id).status in ["left", "kicked"]:
-            update.message.reply_text("Vous n'êtes pas abonné à notre canal. Veuillez vous abonner pour recevoir votre récompense en jetons TRON.")
-        else:
-            tron = Tron(full_node='https://api.trongrid.io', private_key='YOUR_PRIVATE_KEY')
-            tron.trx.send_transaction(tron.trx.address.to_hex(user_id), 100 * 10**6) # Send 100 TRX to the user
-            update.message.reply_text("Félicitations! Vous avez reçu 100 TRX pour vous être abonné à notre canal.")
-    except Exception as e:
-        update.message.reply_text("Une erreur s'est produite lors de la récompense en jetons TRON. Veuillez réessayer plus tard.")
-        logger.error(e)
+updater = Updater(token=token, use_context=True, persistence=persistence)
+dispatcher = updater.dispatcher
 
-def error(update, context):
-    logger.warning('Update "%s" caused error "%s"', update, context.error)
+# Utilisez des constantes pour les états au lieu de chaînes
+PROCEED, FOLLOW_TELEGRAM, FOLLOW_TWITTER, FOLLOW_YOUTUBE, SUBMIT_ADDRESS, END_CONVERSATION, LOOP, SUREWANTTO, CAPTCHASTATE = range(9)
 
-def main():
-    token = os.environ.get('BOT_TOKEN')
+states = {
+    PROCEED: [
+        MessageHandler(Filters.regex("^🚀 Join Airdrop$"), handlers.submit_details),
+        handlers.cancel_handler,
+    ],
+    FOLLOW_TELEGRAM: [
+        MessageHandler(Filters.regex("^Submit Details$"), handlers.follow_telegram),
+        handlers.cancel_handler,
+    ],
+    FOLLOW_TWITTER: [
+        MessageHandler(Filters.regex("^Done$"), handlers.follow_twitter),
+        handlers.cancel_handler,
+    ],
+    FOLLOW_YOUTUBE: [
+        MessageHandler(Filters.regex("^Done$"), handlers.follow_youtube),
+        handlers.cancel_handler,
+    ],
+    SUBMIT_ADDRESS: [handlers.cancel_handler, MessageHandler(Filters.text, handlers.submit_address)],
+    END_CONVERSATION: [
+        handlers.cancel_handler,
+        MessageHandler(Filters.regex("^0x[a-fA-F0-9]{40}$"), handlers.end_conversation),
+    ],
+    LOOP: [MessageHandler(Filters.text, handlers.loop_answer)],
+    SUREWANTTO: [MessageHandler(Filters.regex("^(YES|NO)$"), handlers.sure_want_to)],
+    CAPTCHASTATE: [MessageHandler(Filters.text, handlers.check_captcha)],
+}
 
-    updater = Updater(token, use_context=True)
+conv_handler = ConversationHandler(
+    entry_points=[CommandHandler("start", handlers.start)],
+    states=states,
+    fallbacks=[],
+    name="main",
+    persistent=True,
+)
 
-    dp = updater.dispatcher
+dispatcher.add_handler(CommandHandler("list", handlers.get_list))
+dispatcher.add_handler(CommandHandler("stats", handlers.get_stats))
+dispatcher.add_handler(CommandHandler("bot", handlers.set_status))
+dispatcher.add_handler(conv_handler)
 
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("airdrop", airdrop))
-
-    dp.add_error_handler(error)
-
+#Démarrez le bot
+if __name__ == "__main__":
     updater.start_polling()
-
     updater.idle()
-
-if __name__ == '__main__':
-    main()
