@@ -1,64 +1,49 @@
+import logging
 import os
-from telegram.ext import Updater, CommandHandler, MessageHandler, InlineQueryHandler, Filters
-from telegram import InlineQueryResultArticle, InputTextMessageContent
+import telegram
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from tronapi import Tron
 
-token = os.environ.get("BOT_TOKEN", None)
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    level=logging.INFO)
 
-updater = Updater(token=token, use_context=True)
-dispatcher = updater.dispatcher
+logger = logging.getLogger(__name__)
 
-# To catch commands like "/start"
 def start(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text="I'm a bot, please talk to me!")
+    update.message.reply_text("Bonjour! Je suis un bot d'airdrop de TRON. Abonnez-vous à notre canal pour recevoir votre récompense en jetons TRON.")
 
-start_handler = CommandHandler('start', start)
-dispatcher.add_handler(start_handler)
+def airdrop(update, context):
+    user_id = update.message.from_user.id
+    channel_username = "YOUR_CHANNEL_USERNAME"
+    try:
+        if context.bot.get_chat_member(channel_username, user_id).status in ["left", "kicked"]:
+            update.message.reply_text("Vous n'êtes pas abonné à notre canal. Veuillez vous abonner pour recevoir votre récompense en jetons TRON.")
+        else:
+            tron = Tron(full_node='https://api.trongrid.io', private_key='YOUR_PRIVATE_KEY')
+            tron.trx.send_transaction(tron.trx.address.to_hex(user_id), 100 * 10**6) # Send 100 TRX to the user
+            update.message.reply_text("Félicitations! Vous avez reçu 100 TRX pour vous être abonné à notre canal.")
+    except Exception as e:
+        update.message.reply_text("Une erreur s'est produite lors de la récompense en jetons TRON. Veuillez réessayer plus tard.")
+        logger.error(e)
 
-# To repeat what the user said
-def echo(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text=update.message.text)
+def error(update, context):
+    logger.warning('Update "%s" caused error "%s"', update, context.error)
 
-echo_handler = MessageHandler(Filters.text and (~Filters.command), echo)
-dispatcher.add_handler(echo_handler)
+def main():
+    token = os.environ.get('TELEGRAM_BOT_TOKEN')
 
-# To capitalize what the user inputted after /caps
-def caps(update, context):
-    text_caps = ' '.join(context.args).upper()
-    context.bot.send_message(chat_id=update.effective_chat.id, text=text_caps)
+    updater = Updater(token, use_context=True)
 
-caps_handler = CommandHandler('caps', caps)
-dispatcher.add_handler(caps_handler)
+    dp = updater.dispatcher
 
-# To captialize words using inline mode
-def inline_caps(update, context):
-    query = update.inline_query.query
-    if not query:
-        return
-    results = list()
-    results.append(
-        InlineQueryResultArticle(
-            id=query.upper(),
-            title='Caps',
-            input_message_content=InputTextMessageContent(query.upper())
-        )
-    )
-    context.bot.answer_inline_query(update.inline_query.id, results)
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("airdrop", airdrop))
 
-inline_caps_handler = InlineQueryHandler(inline_caps)
-dispatcher.add_handler(inline_caps_handler)
+    dp.add_error_handler(error)
 
-# Unknown commands
-def unknown(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text="Sorry, I didn't understand that command.")
-
-unknown_handler = MessageHandler(Filters.command, unknown)
-dispatcher.add_handler(unknown_handler)
-
-# To start the bot
-if __name__ == '__main__':
     updater.start_polling()
-    print("The bot is working.")
 
-# To end the bot
-updater.idle()
-print("The bot is stopped.")
+    updater.idle()
+
+if __name__ == '__main__':
+    main()
